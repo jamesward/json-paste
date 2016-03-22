@@ -12,7 +12,7 @@ class Application extends Controller {
     Ok(views.html.index())
   }
 
-  def json = Action(parse.urlFormEncoded(Math.pow(2, 24))) { request =>
+  def json = Action(parse.urlFormEncoded(Math.pow(2, 24).toInt)) { request =>
     val json = request.body.getOrElse("json", Seq("")).head
     Try {
       Ok(Json.parse(json))

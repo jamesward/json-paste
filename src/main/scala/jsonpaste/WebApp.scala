@@ -6,13 +6,16 @@ import kyo.UI.*
 
 /** JSON Paste as a Kyo server-push web app.
   *
-  * A single `SignalRef[String]` is two-way bound to a textarea. Every keystroke
-  * is sent to the server, which re-derives the formatted output and pushes the
-  * DOM diff back over the WebSocket, so the pretty-printed JSON (or the parse
-  * error) updates live with no client-side code.
+  * The textarea is an *uncontrolled* input: edits are read into a
+  * `SignalRef[String]` via `onInput`, but the value is never echoed back into
+  * the field. That matters in a server-push app — echoing a server-held value
+  * back would let a keystroke's round-trip overwrite characters typed in the
+  * meantime, dropping them under fast typing. The server re-derives the
+  * formatted output from the signal and pushes only that diff back over the
+  * WebSocket, so the pretty-printed JSON (or the parse error) updates live.
   *
   * The reactive surface is thin on purpose: all the real work is the pure,
-  * exhaustively-tested `Json.format`, called inside the render body.
+  * exhaustively-tested `JsonFormatter.format`, called inside the render body.
   */
 object WebApp extends KyoApp:
 
@@ -34,12 +37,13 @@ object WebApp extends KyoApp:
     private val okStyle    = outputBase.bg(Color.white)
     private val errorStyle = outputBase.color(Color.red)
 
-    private def ui: UI < Async =
-        for input <- Signal.initRef("")
-        yield UI.main.style(pageStyle)(
+    /** The page as a pure function of its input signal. Exposed for testing so
+      * the UI tree can be inspected without starting a server or a browser. */
+    private[jsonpaste] def view(input: SignalRef[String]): UI =
+        UI.main.style(pageStyle)(
             h1("JSON Paste"),
             p("Paste JSON below; it is validated and pretty-printed live.").style(subtitle),
-            textarea.id("json").placeholder("Paste JSON here…").value(input).style(editorStyle),
+            textarea.id("json").placeholder("Paste JSON here…").onInput(v => input.set(v)).style(editorStyle),
             input.render { raw =>
                 if raw.trim.isEmpty then
                     p("Waiting for input…").id("status").style(subtitle)
@@ -51,6 +55,9 @@ object WebApp extends KyoApp:
                             pre(message).id("output").style(errorStyle)
             }
         )
+
+    private def ui: UI < Async =
+        Signal.initRef("").map(view)
 
     run {
         for

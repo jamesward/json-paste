@@ -1,7 +1,7 @@
 enablePlugins(LauncherJarPlugin)
 
 name         := "json-paste"
-scalaVersion := "3.8.4"
+scalaVersion := "3.9.0"
 
 val kyoVersion = "1.0.0-RC5"
 

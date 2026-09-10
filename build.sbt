@@ -3,9 +3,7 @@ enablePlugins(LauncherJarPlugin)
 name         := "json-paste"
 scalaVersion := "3.9.0"
 
-val kyoVersion = "1.0.0-RC5"
-
-resolvers += Resolver.mavenLocal
+val kyoVersion = "1.0.0-RC6"
 
 libraryDependencies ++= Seq(
   "io.getkyo" %% "kyo-core"  % kyoVersion,
@@ -13,7 +11,8 @@ libraryDependencies ++= Seq(
   "io.getkyo" %% "kyo-ui"    % kyoVersion,
 
   "io.getkyo" %% "kyo-test-api"    % kyoVersion % Test,
-  "io.getkyo" %% "kyo-test-runner" % kyoVersion % Test
+  "io.getkyo" %% "kyo-test-runner" % kyoVersion % Test,
+  "io.getkyo" %% "kyo-browser"     % kyoVersion % Test,
 )
 
 // kyo-test integrates as an sbt test framework (no plugin published).

@@ -1,9 +1,9 @@
 enablePlugins(LauncherJarPlugin)
 
 name         := "json-paste"
-scalaVersion := "3.9.0"
+scalaVersion := "3.10.0"
 
-val kyoVersion = "1.0.0-RC6"
+val kyoVersion = "1.0.0-RC7"
 
 libraryDependencies ++= Seq(
   "io.getkyo" %% "kyo-core"  % kyoVersion,
@@ -41,4 +41,4 @@ Global / mcpPort := 5107
 // SkillsJars: extract agent Skills with `./sbt extractSkillsJars`
 skillsJarsOutputDir := Some(file(".kiro/skills"))
 
-libraryDependencies += "com.jamesward" % "skills" % "0.0.10" % Skills
+libraryDependencies += "com.jamesward" % "skills" % "0.0.12" % Skills

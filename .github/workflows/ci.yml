@@ -19,7 +19,7 @@ jobs:
           cache: sbt
 
       - name: Set up sbt
-        uses: sbt/setup-sbt@v1.5.11
+        uses: sbt/setup-sbt@v1.5.13
 
       - name: Compile, test, and stage
         run: ./sbta "clean; compile; test; stage"

@@ -7,6 +7,10 @@
         "--mcp"
       ],
       "timeout": 1800000
+    },
+    "heroku-ops": {
+      "type": "http",
+      "url": "https://jw-heroku-ops-bd1ee276f8be.herokuapp.com/mcp"
     }
   }
 }

@@ -1,6 +1,6 @@
 # AGENTS.md: json-paste
 
-JSON Paste: a Kyo server-push web app (`jsonpaste.WebApp`) that pretty-prints pasted JSON live.
+JSON Paste: a Kyo server-push web app (`jsonpaste.WebApp`) that pretty-prints pasted JSON live. Built as a Scala Native binary for production and CI, and as a JVM app for development.
 
 ## Agent tooling
 
@@ -11,5 +11,30 @@ JSON Paste: a Kyo server-push web app (`jsonpaste.WebApp`) that pretty-prints pa
 
 ## Build and validation
 
-- Full validation: `./sbta shutdown`, `./sbta extractSkillsJars`, then `./sbta "Test / compile; testFull; stage"`.
-- Dev run: `run` through the `sbta` MCP server (or `./sbta run`). No tests need Docker or paid services; `BrowserIntegrationTest` drives a real browser.
+- One source tree, two platforms, chosen by `project/NativeLinking.scala`: Scala Native when the headers of kyo-net's and
+  kyo-http's C shims are present (`openssl/ssl.h` and `liburing.h`: on Heroku, where buildpack-scala-native installs them,
+  and in CI), the JVM otherwise. `-Dnative=true|false` overrides the detection.
+- Full validation (the native equivalent of `stage` is `nativeLink`): `./sbta shutdown`, `./sbta extractSkillsJars`, then
+  `./sbta -Dnative=true "Test / compile; testFull; nativeLink"`, then the smoke test in `.github/workflows/ci.yml`. CI also
+  runs `./sbta -Dnative=false "Test / compile; testFull"`.
+- Needs Java 25, clang, `libssl-dev` and `liburing-dev` for the Native build. The binary:
+  `target/out/native0.5/scala-3.10.1/json-paste/json-paste`.
+- Dev run: `./sbta ~runReload` (add `-Dnative=false` where the Scala Native headers are installed) restarts the JVM app on
+  every change; sbt-reload works on the JVM build only. No tests need Docker or paid services; `BrowserIntegrationTest`
+  drives a real browser (on both platforms).
+
+## Production
+
+- Heroku, buildpacks `heroku/jvm` (the JDK for sbt, `system.properties`) then
+  `https://github.com/jamesward/buildpack-scala-native`, which runs `nativeLink` and ships only the binary and `Procfile`.
+- `KYO_NET_BACKEND=epoll` in the `Procfile`: Heroku dynos can't create io_uring rings.
+
+## Exceptions
+
+- **No sbt-native-packager:** a Scala Native server is a single binary that `buildpack-scala-native` ships, and `nativeLink`
+  stands in for `stage`.
+- **kyo-ffi-plugin's tasks reimplemented:** Kyo's documented Native setup uses kyo-ffi-plugin's
+  `ffiNativeDependencyLinkingOptions` / `ffiNativeDependencyCompileOptions`, but the plugin is published for sbt 1 only.
+  `project/NativeLinking.scala` (shared with `jamesward/aws-emul-mcp`) defines the same two tasks for sbt 2. Switch to the
+  plugin once it is published for sbt 2.
+- **`.jvmopts` sets `-Xmx3g`:** Scala Native's linker can run out of the default 1 GB heap.

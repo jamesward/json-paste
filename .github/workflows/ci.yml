@@ -9,21 +9,41 @@ concurrency:
   group: ${{ github.workflow }}-${{ github.ref }}
   cancel-in-progress: true
 
+permissions:
+  contents: read
+
 jobs:
-  build:
-    runs-on: ubuntu-latest
+  jvm:
+    runs-on: ubuntu-24.04
     steps:
       - uses: actions/checkout@v7
-
-      - name: Set up JDK 25
-        uses: actions/setup-java@v6
+      - uses: actions/setup-java@v6
         with:
           distribution: temurin
           java-version: "25"
           cache: sbt
+      - run: ./sbta -Dnative=false "Test / compile; testFull"
 
-      - name: Set up sbt
-        uses: sbt/setup-sbt@v1.5.14
-
-      - name: Compile, test, and stage
-        run: ./sbta "clean; compile; test; stage"
+  native:
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/setup-java@v6
+        with:
+          distribution: temurin
+          java-version: "25"
+          cache: sbt
+      # The native libraries buildpack-scala-native installs on Heroku (liburing-dev makes kyo-net's io_uring shim real,
+      # and project/NativeLinking.scala then links liburing.a).
+      - name: Native toolchain
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y clang libssl-dev liburing-dev zlib1g-dev
+      - run: ./sbta extractSkillsJars
+      - run: ./sbta -Dnative=true "Test / compile; testFull; nativeLink"
+      - name: Smoke test the native binary
+        run: |
+          bin=target/out/native0.5/scala-3.10.1/json-paste/json-paste
+          PORT=8080 KYO_NET_BACKEND=epoll "$bin" &
+          for i in $(seq 1 30); do curl -fsS http://localhost:8080/ -o page.html && break; sleep 1; done
+          grep -q 'JSON Paste' page.html

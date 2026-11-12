@@ -1,7 +1,7 @@
 enablePlugins(LauncherJarPlugin)
 
 name         := "json-paste"
-scalaVersion := "3.10.0"
+scalaVersion := "3.10.1"
 
 val kyoVersion = "1.0.0-RC7"
 
@@ -36,4 +36,4 @@ Compile / doc / sources                := Seq.empty
 // SkillsJars: extract agent Skills with `./sbta extractSkillsJars`
 skillsJarsOutputDir := Some(file(".kiro/skills"))
 
-libraryDependencies += "com.jamesward" % "skills" % "0.0.24" % Skills
+libraryDependencies += "com.jamesward" % "skills" % "0.0.26" % Skills
